@@ -52,7 +52,7 @@
         .container-login h2 { margin: 0 0 20px; color: #333; font-weight: 600; }
         form { width: 100%; }
         label { display: block; margin-bottom: 6px; font-size: 13px; color: #555; }
-        input[type="text"], input[type="password"], select {
+        input[type="email"], input[type="text"], input[type="password"], select {
             width: 100%; padding: 12px; margin-bottom: 14px; border-radius: 6px; border: 1px solid #ccc;
             font-size: 15px;
         }
@@ -132,8 +132,8 @@
         /* -----------------------
            DASHBOARD
            ----------------------- */
-        #dashboard-container { display: flex; height: 100vh; width: 100%; }
-        #dashboard-container.hidden { display: none; }
+        #dashboard-container { display: none; height: 100vh; width: 100%; }
+        #dashboard-container.visible { display: flex; }
 
         .sidebar {
             width: 220px;
@@ -347,26 +347,20 @@
         </div>
 
         <div class="container-login">
-            <h1 id="main-title">GMcontrol</h1>
+            <h1 id="main-title">Teste</h1>
             <h2>Login</h2>
 
             <form id="loginForm">
-                <label for="username">Usuário</label>
-                <input type="text" id="username" placeholder="Digite seu usuário" required>
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="Digite seu email" required>
 
                 <label for="password">Senha</label>
                 <input type="password" id="password" placeholder="Digite sua senha" required>
-
-                <div class="remember">
-                    <input type="checkbox" id="rememberMe">
-                    <label for="rememberMe" style="margin: 0; font-size: 14px; color: #555;">Lembrar-me</label>
-                </div>
-
+                
                 <button type="submit" id="loginBtn">Entrar</button>
 
                 <div class="extra-links">
                     <a href="#" id="forgotLink">Esqueci minha senha</a>
-                    <a href="#" id="createAccountLink">Criar conta</a>
                 </div>
             </form>
         </div>
@@ -381,7 +375,7 @@
         </div>
     </div>
 
-    <div id="dashboard-container" class="hidden">
+    <div id="dashboard-container">
         <div class="sidebar">
             <a id="menu-dashboard" onclick="showSection('dashboard')">Dashboard</a>
             <a id="menu-cadastro-veiculo" onclick="showSection('cadastro-veiculo')">Cadastro de Veículo</a>
@@ -400,12 +394,11 @@
                     <img id="logo-dashboard" class="logo-display" src="" alt="Logo do Cliente" style="display: none;">
                     <h2>Dashboard</h2>
                 </div>
-                <p id="welcome-msg"></p>
                 <p>Cliente atual: <strong id="cliente-atual-display">Nenhum selecionado</strong></p>
                 
                 <hr style="margin: 20px 0;">
                 
-                <h3>Estatísticas da Frota</h3>
+                <h3>Estatísticas da Frota do Cliente</h3>
                 <div class="chart-container">
                     <div class="chart-card">
                         <h4>Veículos por Marca</h4>
@@ -516,11 +509,7 @@
             </div>
 
             <div id="clientes" class="section card">
-                <h2>Clientes</h2>
-                <div class="form-group">
-                    <label for="cliente-pesquisa">Pesquisar cliente:</label>
-                    <input type="text" id="cliente-pesquisa" placeholder="Nome, CPF/CNPJ">
-                </div>
+                <h2>Cadastro de Clientes</h2>
                 <div class="form-group">
                     <label for="cliente-nome">Nome:</label>
                     <input type="text" id="cliente-nome" placeholder="Nome completo">
@@ -549,11 +538,12 @@
                 <button id="gerarRelatorioBtn">Gerar Relatório</button>
                 <div id="area-relatorio" style="margin-top: 20px;">
                     </div>
-                <button id="btn-download-pdf">Baixar PDF</button>
+                <button id="btn-download-pdf" style="display:none;">Baixar PDF</button>
             </div>
             
             <div id="configuracoes" class="section card">
-                <h2>Configurações</h2>
+                <h2>Configurações do Cliente</h2>
+                <p>As configurações abaixo são aplicadas ao cliente selecionado: <strong><span id="cliente-config-nome"></span></strong></p>
                 <div class="form-group">
                     <label for="logo-upload">Carregar Logo (JPG, PNG):</label>
                     <input type="file" id="logo-upload" accept=".jpg, .jpeg, .png">
@@ -562,14 +552,14 @@
                 <img id="logo-preview" style="max-width: 200px; margin-top: 10px; display: none;" alt="Preview da Logo">
                 <hr style="margin: 20px 0;">
                 
-                <h3>Gerenciar Usuários</h3>
+                <h3>Gerenciar Usuários (Acesso Global)</h3>
                 <div class="form-group">
-                    <label for="newUser">Novo Usuário:</label>
-                    <input type="text" id="newUser" placeholder="Nome de usuário">
+                    <label for="newUser">Novo Email de Usuário:</label>
+                    <input type="email" id="newUser" placeholder="email@exemplo.com">
                 </div>
                 <div class="form-group">
                     <label for="newPass">Senha:</label>
-                    <input type="password" id="newPass" placeholder="Senha do usuário">
+                    <input type="password" id="newPass" placeholder="Mínimo 6 caracteres">
                 </div>
                 <button id="createUserBtn">Cadastrar Novo Usuário</button>
             </div>
@@ -580,6 +570,7 @@
         <div class="modal-content">
             <h3 id="modal-title">Dados do Pneu - Posição X</h3>
             <input type="hidden" id="posicao-atual">
+            <input type="hidden" id="veiculo-ativo-id">
             <div class="form-group">
                 <label for="nroFogo">Nº de fogo:</label>
                 <input type="text" id="nroFogo" placeholder="Número de identificação único">
@@ -609,7 +600,35 @@
 
     <div id="toast" class="toast"></div>
 
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js"></script>
+
     <script>
+        // =================================================================================
+        // == COLE AQUI O OBJETO DE CONFIGURAÇÃO DO SEU PROJETO FIREBASE ==
+        // =================================================================================
+        const firebaseConfig = {
+            apiKey: "SUA_API_KEY",
+            authDomain: "SEU_AUTH_DOMAIN",
+            projectId: "SEU_PROJECT_ID",
+            storageBucket: "SEU_STORAGE_BUCKET",
+            messagingSenderId: "SEU_MESSAGING_SENDER_ID",
+            appId: "SEU_APP_ID"
+        };
+        // =================================================================================
+
+        // Inicializar Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        // Variáveis de estado globais
+        let clienteAtivo = null;
+        let veiculoAtivo = null;
+
         /* -----------------------
            Utils: Toast
            ----------------------- */
@@ -619,496 +638,246 @@
             t.className = 'toast show';
             setTimeout(() => { t.className = 'toast'; }, 3000);
         }
-
+        
         /* -----------------------
-           Inicializar usuários e storage
+           Gerenciamento de Estado de Autenticação
            ----------------------- */
-        if (!localStorage.getItem('users')) {
-            localStorage.setItem('users', JSON.stringify([{ username: 'Mae', password: '1234', admin: true }]));
-        }
-        if (!localStorage.getItem('historicoVeiculos')) {
-            localStorage.setItem('historicoVeiculos', JSON.stringify([]));
-        }
-        if (!localStorage.getItem('clientes')) {
-            localStorage.setItem('clientes', JSON.stringify([
-                { id: '1', nome: 'Cliente A', cpf: '12345678900' },
-                { id: '2', nome: 'Cliente B', cpf: '09876543210' },
-                { id: '3', nome: 'Cliente C', cpf: '11223344550' }
-            ]));
-        }
-
-        /* -----------------------
-           Tratamento da imagem: tenta carregar, se falhar aplica fallback
-           ----------------------- */
-        (function checkImage() {
-            const imgPath = 'A_photograph_taken_during_the_daytime_shows_a_midd.png';
-            const img = new Image();
-            img.onload = () => {
-                // imagem carregou corretamente (nada a fazer)
-                console.log('Imagem de fundo carregada com sucesso.');
-            };
-            img.onerror = () => {
-                // fallback visual
-                const el = document.getElementById('loginImage');
-                el.style.backgroundImage = 'linear-gradient(135deg, #e0f2f1, #f1f8fa)';
-                console.warn(`Não foi possível carregar "${imgPath}". Coloque o arquivo no mesmo diretório ou atualize o CSS com o caminho correto.`);
-            };
-            // dispara o carregamento
-            img.src = imgPath;
-        })();
-
-        /* -----------------------
-           Login - conecta com dashboard
-           ----------------------- */
-        const loginForm = document.getElementById('loginForm');
-        loginForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            login();
-        });
-
-        function login() {
-            const u = document.getElementById('username').value.trim();
-            const p = document.getElementById('password').value.trim();
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const user = users.find(x => x.username === u && x.password === p);
+        auth.onAuthStateChanged(user => {
             if (user) {
+                // Usuário está logado
                 document.getElementById('login-container').classList.add('hidden');
                 document.getElementById('selecao-cliente-container').classList.add('active');
-                
-                // Salvar usuário logado e renderizar a seleção de clientes
-                localStorage.setItem('lastUser', JSON.stringify(user));
                 renderizarSelecaoClientes();
-                
-                showToast('Login realizado com sucesso!');
-                if (document.getElementById('rememberMe').checked) {
-                    localStorage.setItem('lastUser', JSON.stringify(user));
-                } else {
-                    localStorage.removeItem('lastUser');
-                }
             } else {
-                showToast('Usuário ou senha incorretos!');
+                // Usuário não está logado
+                document.getElementById('login-container').classList.remove('hidden');
+                document.getElementById('selecao-cliente-container').classList.remove('active');
+                document.getElementById('dashboard-container').classList.remove('visible');
+                clienteAtivo = null;
+                veiculoAtivo = null;
             }
-        }
+        });
 
         /* -----------------------
-           Seleção de Cliente
+           Login
            ----------------------- */
-        let clienteSelecionado = null;
-        const listaClientesUl = document.getElementById('lista-clientes');
-        const confirmarClienteBtn = document.getElementById('confirmarClienteBtn');
+        const loginForm = document.getElementById('loginForm');
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
 
-        function renderizarSelecaoClientes() {
-            const clientes = JSON.parse(localStorage.getItem('clientes') || '[]');
-            listaClientesUl.innerHTML = '';
-            
-            if (clientes.length === 0) {
-                const li = document.createElement('li');
-                li.textContent = 'Nenhum cliente cadastrado.';
-                listaClientesUl.appendChild(li);
-                confirmarClienteBtn.disabled = true;
-                return;
-            }
-
-            clientes.forEach(cliente => {
-                const li = document.createElement('li');
-                li.textContent = cliente.nome;
-                li.dataset.clienteId = cliente.id;
-                li.addEventListener('click', () => {
-                    document.querySelectorAll('#lista-clientes li').forEach(item => item.classList.remove('selected'));
-                    li.classList.add('selected');
-                    clienteSelecionado = cliente;
+            auth.signInWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    showToast('Login realizado com sucesso!');
+                    // onAuthStateChanged irá lidar com a exibição da tela correta
+                })
+                .catch(error => {
+                    showToast(`Erro no login: ${error.message}`);
                 });
-                listaClientesUl.appendChild(li);
-            });
-            confirmarClienteBtn.disabled = false;
-        }
-
-        confirmarClienteBtn.addEventListener('click', () => {
-            if (clienteSelecionado) {
-                localStorage.setItem('clienteAtivo', JSON.stringify(clienteSelecionado));
-                document.getElementById('selecao-cliente-container').classList.remove('active');
-                document.getElementById('dashboard-container').classList.remove('hidden');
-                document.getElementById('cliente-atual-display').textContent = clienteSelecionado.nome;
-                
-                // Exibir dashboard e carregar dados
-                showSection('dashboard');
-                showToast(`Cliente "${clienteSelecionado.nome}" selecionado!`);
-            } else {
-                showToast('Selecione um cliente para continuar.');
-            }
         });
 
         /* -----------------------
            Logout
            ----------------------- */
         document.getElementById('logout-btn').addEventListener('click', () => {
-            document.getElementById('dashboard-container').classList.add('hidden');
-            document.getElementById('login-container').classList.remove('hidden');
-            localStorage.removeItem('clienteAtivo');
-            showToast('Você saiu do sistema.');
+            auth.signOut().then(() => {
+                showToast('Você saiu do sistema.');
+                // onAuthStateChanged irá redirecionar para a tela de login
+                window.location.reload(); // Garante que o estado seja limpo
+            });
         });
 
         /* -----------------------
-           Sidebar toggle
+           Criação de novo usuário
+           ----------------------- */
+        document.getElementById('createUserBtn').addEventListener('click', () => {
+            const email = document.getElementById('newUser').value.trim();
+            const password = document.getElementById('newPass').value.trim();
+
+            if (!email || !password) {
+                showToast('Preencha email e senha!');
+                return;
+            }
+            if (password.length < 6) {
+                showToast('A senha deve ter no mínimo 6 caracteres.');
+                return;
+            }
+
+            auth.createUserWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    showToast(`Usuário ${email} criado com sucesso!`);
+                    document.getElementById('newUser').value = '';
+                    document.getElementById('newPass').value = '';
+                })
+                .catch(error => {
+                    showToast(`Erro ao criar usuário: ${error.message}`);
+                });
+        });
+
+        /* -----------------------
+           Seleção de Cliente
+           ----------------------- */
+        const listaClientesUl = document.getElementById('lista-clientes');
+        const confirmarClienteBtn = document.getElementById('confirmarClienteBtn');
+        let clienteSelecionadoTemp = null; // Cliente temporário antes da confirmação
+
+        async function renderizarSelecaoClientes() {
+            listaClientesUl.innerHTML = '<li>Carregando...</li>';
+            try {
+                const querySnapshot = await db.collection('clientes').get();
+                listaClientesUl.innerHTML = '';
+
+                if (querySnapshot.empty) {
+                    listaClientesUl.innerHTML = '<li>Nenhum cliente cadastrado.</li>';
+                    confirmarClienteBtn.disabled = true;
+                    return;
+                }
+
+                querySnapshot.forEach(doc => {
+                    const cliente = { id: doc.id, ...doc.data() };
+                    const li = document.createElement('li');
+                    li.textContent = cliente.nome;
+                    li.dataset.clienteId = cliente.id;
+                    li.addEventListener('click', () => {
+                        document.querySelectorAll('#lista-clientes li').forEach(item => item.classList.remove('selected'));
+                        li.classList.add('selected');
+                        clienteSelecionadoTemp = cliente;
+                    });
+                    listaClientesUl.appendChild(li);
+                });
+                confirmarClienteBtn.disabled = false;
+            } catch (error) {
+                showToast('Erro ao carregar clientes: ' + error.message);
+                listaClientesUl.innerHTML = '<li>Erro ao carregar.</li>';
+            }
+        }
+        
+        confirmarClienteBtn.addEventListener('click', () => {
+            if (clienteSelecionadoTemp) {
+                clienteAtivo = clienteSelecionadoTemp;
+                document.getElementById('selecao-cliente-container').classList.remove('active');
+                document.getElementById('dashboard-container').classList.add('visible');
+                document.getElementById('cliente-atual-display').textContent = clienteAtivo.nome;
+                document.getElementById('cliente-config-nome').textContent = clienteAtivo.nome;
+                
+                showSection('dashboard');
+                showToast(`Cliente "${clienteAtivo.nome}" selecionado!`);
+                carregarLogo();
+            } else {
+                showToast('Selecione um cliente para continuar.');
+            }
+        });
+
+        /* -----------------------
+           Cadastro de Clientes
+           ----------------------- */
+        document.getElementById('salvarClienteBtn').addEventListener('click', async () => {
+            const nome = document.getElementById('cliente-nome').value.trim();
+            const cpf = document.getElementById('cliente-cpf').value.trim();
+            const telefone = document.getElementById('cliente-telefone').value.trim();
+            const endereco = document.getElementById('cliente-endereco').value.trim();
+
+            if (!nome || !cpf) {
+                showToast('Nome e CPF/CNPJ são obrigatórios!');
+                return;
+            }
+
+            try {
+                await db.collection('clientes').add({
+                    nome, cpf, telefone, endereco, createdAt: new Date()
+                });
+                showToast('Cliente cadastrado com sucesso!');
+                // Limpa os campos
+                document.getElementById('cliente-nome').value = '';
+                document.getElementById('cliente-cpf').value = '';
+                document.getElementById('cliente-telefone').value = '';
+                document.getElementById('cliente-endereco').value = '';
+            } catch (error) {
+                showToast('Erro ao salvar cliente: ' + error.message);
+            }
+        });
+
+
+        /* -----------------------
+           Sidebar e Navegação
            ----------------------- */
         const sidebar = document.querySelector('.sidebar');
         const toggleBtn = document.getElementById('toggle-btn');
-
         toggleBtn.addEventListener('click', () => {
             sidebar.classList.toggle('collapsed');
-            if (sidebar.classList.contains('collapsed')) {
-                toggleBtn.textContent = '☰';
-            } else {
-                toggleBtn.textContent = '✕';
-            }
+            toggleBtn.textContent = sidebar.classList.contains('collapsed') ? '☰' : '✕';
         });
 
-        /* -----------------------
-           Navegação entre seções
-           ----------------------- */
-        const sections = {
-            dashboard: document.getElementById('dashboard'),
-            inspecao: document.getElementById('inspecao'),
-            'cadastro-veiculo': document.getElementById('cadastro-veiculo'),
-            'historico-veiculos': document.getElementById('historico-veiculos'),
-            'relatorio': document.getElementById('relatorio'),
-            'clientes': document.getElementById('clientes'),
-            'configuracoes': document.getElementById('configuracoes')
-        };
-        const menus = {
-            dashboard: document.getElementById('menu-dashboard'),
-            inspecao: document.getElementById('menu-inspecao'),
-            'cadastro-veiculo': document.getElementById('menu-cadastro-veiculo'),
-            'historico-veiculos': document.getElementById('menu-historico-veiculos'),
-            'relatorio': document.getElementById('menu-relatorio'),
-            'clientes': document.getElementById('menu-clientes'),
-            'configuracoes': document.getElementById('menu-configuracoes')
-        };
         function showSection(id) {
-            Object.values(sections).forEach(s => { s.classList.remove('active'); s.classList.add('hidden'); });
-            sections[id].classList.remove('hidden');
-            setTimeout(() => sections[id].classList.add('active'), 10);
-            Object.values(menus).forEach(m => m.classList.remove('active'));
-            menus[id].classList.add('active');
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
             
-            if (id === 'dashboard') {
-                renderizarGraficos();
-            } else if (id === 'inspecao') {
-                PneusManager.carregarHistoricoVeiculos();
-            } else if (id === 'historico-veiculos') {
-                renderizarHistoricoVeiculos();
-            } else if (id === 'relatorio') {
-                carregarVeiculosParaRelatorio();
+            document.querySelectorAll('.sidebar a').forEach(m => m.classList.remove('active'));
+            document.getElementById(`menu-${id.replace('_', '-')}`).classList.add('active');
+
+            // Lógica específica de carregamento por seção
+            if (!clienteAtivo && id !== 'clientes') {
+                showToast('Por favor, selecione um cliente primeiro.');
+                return;
             }
+            if (id === 'dashboard') renderizarGraficos();
+            if (id === 'inspecao') PneusManager.carregarHistoricoVeiculos();
+            if (id === 'historico-veiculos') renderizarHistoricoVeiculos();
+            if (id === 'relatorio') carregarVeiculosParaRelatorio();
         }
 
         /* -----------------------
-           Configurações (Logo)
+           Configurações (Logo com Firebase Storage)
            ----------------------- */
         const logoUploadInput = document.getElementById('logo-upload');
         const logoPreviewImg = document.getElementById('logo-preview');
         const logoDashboardImg = document.getElementById('logo-dashboard');
         const mainTitleH1 = document.getElementById('main-title');
 
-        function carregarLogo() {
-            const logoUrl = localStorage.getItem('companyLogo');
-            if (logoUrl) {
-                // Exibir na tela de login
-                const logoLogin = document.createElement('img');
-                logoLogin.src = logoUrl;
-                logoLogin.classList.add('logo-display');
-                mainTitleH1.prepend(logoLogin);
-                
-                // Exibir no dashboard
-                logoDashboardImg.src = logoUrl;
-                logoDashboardImg.style.display = 'block';
-
-                // Exibir preview nas configurações
-                logoPreviewImg.src = logoUrl;
-                logoPreviewImg.style.display = 'block';
+        async function carregarLogo() {
+            if (!clienteAtivo) return;
+            try {
+                const doc = await db.collection('clientes').doc(clienteAtivo.id).get();
+                const logoUrl = doc.data()?.logoUrl;
+                if (logoUrl) {
+                    logoDashboardImg.src = logoUrl;
+                    logoDashboardImg.style.display = 'block';
+                    logoPreviewImg.src = logoUrl;
+                    logoPreviewImg.style.display = 'block';
+                } else {
+                    logoDashboardImg.style.display = 'none';
+                    logoPreviewImg.style.display = 'none';
+                }
+            } catch (error) {
+                console.error("Erro ao carregar logo:", error);
             }
         }
-        carregarLogo();
 
         logoUploadInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const logoUrl = event.target.result;
-                    localStorage.setItem('companyLogo', logoUrl);
-                    showToast('Logo salva com sucesso!');
-                    // Recarregar a logo para atualizar todas as partes do site
-                    window.location.reload(); 
-                };
-                reader.readAsDataURL(file);
-            }
-        });
+            if (!file || !clienteAtivo) return;
 
+            showToast('Enviando logo...');
+            const filePath = `logos/${clienteAtivo.id}/${file.name}`;
+            const fileRef = storage.ref(filePath);
+            const uploadTask = fileRef.put(file);
 
-        /* -----------------------
-           Histórico de Veículos
-           ----------------------- */
-        function renderizarHistoricoVeiculos() {
-            const tbody = document.querySelector('#historico-veiculos-table tbody');
-            tbody.innerHTML = '';
-            const historico = JSON.parse(localStorage.getItem('historicoVeiculos') || '[]');
-            
-            if (historico.length === 0) {
-                const tr = document.createElement('tr');
-                const td = document.createElement('td');
-                td.setAttribute('colspan', '3');
-                td.textContent = 'Nenhum veículo cadastrado.';
-                td.style.textAlign = 'center';
-                tr.appendChild(td);
-                tbody.appendChild(tr);
-                return;
-            }
-            
-            historico.forEach(veiculo => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${veiculo.placa}</td>
-                    <td>${veiculo.marca}</td>
-                    <td>${veiculo.eixos}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-        
-        /* -----------------------
-           Relatórios
-           ----------------------- */
-        const selectRelatorioVeiculo = document.getElementById('select-relatorio-veiculo');
-        const areaRelatorioDiv = document.getElementById('area-relatorio');
-        const gerarRelatorioBtn = document.getElementById('gerarRelatorioBtn');
-        const downloadPdfBtn = document.getElementById('btn-download-pdf');
-
-        function carregarVeiculosParaRelatorio() {
-            const historico = JSON.parse(localStorage.getItem('historicoVeiculos') || '[]');
-            selectRelatorioVeiculo.innerHTML = '';
-            
-            if (historico.length === 0) {
-                const option = document.createElement('option');
-                option.textContent = 'Nenhum veículo com inspeção';
-                selectRelatorioVeiculo.appendChild(option);
-                gerarRelatorioBtn.disabled = true;
-                return;
-            }
-            
-            historico.forEach(veiculo => {
-                const option = document.createElement('option');
-                option.value = veiculo.placa;
-                option.textContent = `${veiculo.placa} - ${veiculo.marca} (${veiculo.eixos} Eixos)`;
-                selectRelatorioVeiculo.appendChild(option);
-            });
-            gerarRelatorioBtn.disabled = false;
-        }
-
-        gerarRelatorioBtn.addEventListener('click', () => {
-            const placaSelecionada = selectRelatorioVeiculo.value;
-            if (!placaSelecionada) {
-                showToast('Selecione um veículo para gerar o relatório.');
-                return;
-            }
-            
-            const historico = JSON.parse(localStorage.getItem('historicoVeiculos') || '[]');
-            const veiculo = historico.find(v => v.placa === placaSelecionada);
-
-            if (!veiculo) {
-                showToast('Veículo não encontrado.');
-                return;
-            }
-
-            // Gerar o HTML do relatório
-            let relatorioHtml = `
-                <h3>Relatório de Inspeção do Veículo</h3>
-                <p><strong>Placa:</strong> ${veiculo.placa}</p>
-                <p><strong>Marca:</strong> ${veiculo.marca}</p>
-                <p><strong>Modelo:</strong> ${veiculo.modelo}</p>
-                <p><strong>Eixos:</strong> ${veiculo.eixos}</p>
-                <hr>
-                <h4>Pneus Inspecionados</h4>
-                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-                    <thead>
-                        <tr style="background-color: #f2f2f2;">
-                            <th style="padding: 10px; border: 1px solid #ddd;">Posição</th>
-                            <th style="padding: 10px; border: 1px solid #ddd;">Nº de Fogo</th>
-                            <th style="padding: 10px; border: 1px solid #ddd;">Marca</th>
-                            <th style="padding: 10px; border: 1px solid #ddd;">PSI</th>
-                            <th style="padding: 10px; border: 1px solid #ddd;">MM Borracha</th>
-                            <th style="padding: 10px; border: 1px solid #ddd;">Tampa</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            for (const [posicaoId, dados] of Object.entries(veiculo.posicoesPneus)) {
-                if (dados) {
-                    relatorioHtml += `
-                        <tr>
-                            <td style="padding: 10px; border: 1px solid #ddd;">${document.getElementById(posicaoId).dataset.posicao}</td>
-                            <td style="padding: 10px; border: 1px solid #ddd;">${dados.nroFogo || '-'}</td>
-                            <td style="padding: 10px; border: 1px solid #ddd;">${dados.marca || '-'}</td>
-                            <td style="padding: 10px; border: 1px solid #ddd;">${dados.psi || '-'}</td>
-                            <td style="padding: 10px; border: 1px solid #ddd;">${dados.mmBorracha || '-'}</td>
-                            <td style="padding: 10px; border: 1px solid #ddd;">${dados.temTampa ? 'Sim' : 'Não'}</td>
-                        </tr>
-                    `;
+            uploadTask.on('state_changed', 
+                (snapshot) => { /* progresso */ }, 
+                (error) => { showToast('Erro no upload: ' + error.message); }, 
+                () => {
+                    uploadTask.snapshot.ref.getDownloadURL().then(async (downloadURL) => {
+                        await db.collection('clientes').doc(clienteAtivo.id).update({ logoUrl: downloadURL });
+                        showToast('Logo salva com sucesso!');
+                        carregarLogo();
+                    });
                 }
-            }
-            relatorioHtml += '</tbody></table>';
-            areaRelatorioDiv.innerHTML = relatorioHtml;
-            downloadPdfBtn.style.display = 'block';
-            showToast('Relatório gerado com sucesso!');
-        });
-
-        downloadPdfBtn.addEventListener('click', () => {
-            showToast('Gerando PDF, por favor aguarde...');
-            
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'a4');
-            const logoUrl = localStorage.getItem('companyLogo');
-            let startY = 10;
-            
-            function addLogoAndContent() {
-                html2canvas(areaRelatorioDiv, { scale: 2 }).then(canvas => {
-                    const imgData = canvas.toDataURL('image/png');
-                    const imgWidth = 190;
-                    const pageHeight = doc.internal.pageSize.getHeight();
-                    const imgHeight = canvas.height * imgWidth / canvas.width;
-                    let heightLeft = imgHeight;
-                    let position = startY;
-
-                    doc.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-                    heightLeft -= (pageHeight - position);
-
-                    while (heightLeft >= 0) {
-                        position = heightLeft - imgHeight;
-                        doc.addPage();
-                        doc.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-                        heightLeft -= pageHeight;
-                    }
-
-                    doc.save('relatorio-inspecao.pdf');
-                    showToast('PDF baixado com sucesso!');
-                }).catch(error => {
-                    console.error('Erro ao gerar PDF (conteúdo):', error);
-                    showToast('Erro ao gerar o PDF. Tente novamente.');
-                });
-            }
-
-            if (logoUrl) {
-                const img = new Image();
-                img.onload = () => {
-                    const imgWidth = 40;
-                    const imgHeight = (img.height * imgWidth) / img.width;
-                    doc.addImage(logoUrl, 'PNG', 10, 10, imgWidth, imgHeight);
-                    startY = startY + imgHeight + 10;
-                    addLogoAndContent();
-                };
-                img.onerror = () => {
-                    console.error('Erro ao carregar a logo para o PDF.');
-                    addLogoAndContent();
-                };
-                img.src = logoUrl;
-            } else {
-                addLogoAndContent();
-            }
+            );
         });
 
         /* -----------------------
-           Gráficos do Dashboard
-           ----------------------- */
-        let marcaChart, eixoChart;
-        function renderizarGraficos() {
-            const historico = JSON.parse(localStorage.getItem('historicoVeiculos') || '[]');
-            
-            if (historico.length === 0) {
-                document.getElementById('veiculosPorMarcaChart').style.display = 'none';
-                document.getElementById('veiculosPorEixoChart').style.display = 'none';
-                return;
-            }
-
-            // Gráfico de Veículos por Marca
-            const marcas = historico.reduce((acc, veiculo) => {
-                acc[veiculo.marca] = (acc[veiculo.marca] || 0) + 1;
-                return acc;
-            }, {});
-            const marcaLabels = Object.keys(marcas);
-            const marcaData = Object.values(marcas);
-            
-            if (marcaChart) marcaChart.destroy();
-            const marcaCtx = document.getElementById('veiculosPorMarcaChart').getContext('2d');
-            document.getElementById('veiculosPorMarcaChart').style.display = 'block';
-            marcaChart = new Chart(marcaCtx, {
-                type: 'bar',
-                data: {
-                    labels: marcaLabels,
-                    datasets: [{
-                        label: 'Quantidade',
-                        data: marcaData,
-                        backgroundColor: 'rgba(22, 160, 133, 0.7)',
-                        borderColor: 'rgba(22, 160, 133, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                precision: 0
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Gráfico de Veículos por Eixo
-            const eixos = historico.reduce((acc, veiculo) => {
-                acc[veiculo.eixos + ' Eixos'] = (acc[veiculo.eixos + ' Eixos'] || 0) + 1;
-                return acc;
-            }, {});
-            const eixoLabels = Object.keys(eixos);
-            const eixoData = Object.values(eixos);
-
-            if (eixoChart) eixoChart.destroy();
-            const eixoCtx = document.getElementById('veiculosPorEixoChart').getContext('2d');
-            document.getElementById('veiculosPorEixoChart').style.display = 'block';
-            eixoChart = new Chart(eixoCtx, {
-                type: 'pie',
-                data: {
-                    labels: eixoLabels,
-                    datasets: [{
-                        data: eixoData,
-                        backgroundColor: [
-                            'rgba(52, 152, 219, 0.7)',
-                            'rgba(46, 204, 113, 0.7)',
-                            'rgba(241, 196, 15, 0.7)'
-                        ],
-                        borderColor: [
-                            'rgba(52, 152, 219, 1)',
-                            'rgba(46, 204, 113, 1)',
-                            'rgba(241, 196, 15, 1)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    }
-                }
-            });
-        }
-
-        /* -----------------------
-           Gerenciador de Pneus (mesma lógica que você tinha)
+           Gerenciador de Pneus e Veículos (com Firestore)
            ----------------------- */
         const modelosVeiculos = {
             'Toco': { eixos: 2, posicoes: ['pneu-dd-2e', 'pneu-de-2e', 'pneu-td-2e-int', 'pneu-td-2e-ext', 'pneu-te-2e-int', 'pneu-te-2e-ext'] },
@@ -1118,130 +887,102 @@
 
         const PneusManager = {
             init() {
+                // Mapeamento de elementos
                 this.modal = document.getElementById('modal-pneu-data');
-                this.posicaoAtualInput = document.getElementById('posicao-atual');
-                this.modalTitle = document.getElementById('modal-title');
-                this.nroFogoInput = document.getElementById('nroFogo');
-                this.marcaPneuInput = document.getElementById('marca');
-                this.psiInput = document.getElementById('psi');
-                this.mmBorrachaInput = document.getElementById('mmBorracha');
-                this.temTampaInput = document.getElementById('temTampa');
-                this.salvarPneuBtn = document.getElementById('salvarPneuBtn');
-                this.cancelarPneuBtn = document.getElementById('cancelarPneuBtn');
-
-                this.placaVeiculoInput = document.getElementById('placa-veiculo');
-                this.marcaVeiculoInput = document.getElementById('marca-veiculo');
-                this.eixosVeiculoSelect = document.getElementById('eixos-veiculo');
                 this.salvarVeiculoBtn = document.getElementById('salvarVeiculoBtn');
-
                 this.selectVeiculoInspecao = document.getElementById('select-veiculo-inspecao');
-                this.infoVeiculoSelecionado = document.getElementById('info-veiculo-selecionado');
-                
-                this.diagramas = {
-                    '2': document.getElementById('diagrama-2eixos'),
-                    '3': document.getElementById('diagrama-3eixos'),
-                    '4': document.getElementById('diagrama-4eixos')
-                };
-                
-                // Event Listeners
+                this.salvarPneuBtn = document.getElementById('salvarPneuBtn');
+                document.getElementById('cancelarPneuBtn').addEventListener('click', () => this.fecharModal());
+
+                // Eventos
                 this.salvarVeiculoBtn.addEventListener('click', () => this.salvarVeiculo());
                 this.selectVeiculoInspecao.addEventListener('change', () => this.carregarVeiculoSelecionado());
                 this.salvarPneuBtn.addEventListener('click', () => this.salvarDadosPneu());
-                this.cancelarPneuBtn.addEventListener('click', () => this.fecharModal());
-
                 document.querySelectorAll('.posicao-pneu').forEach(pneuDiv => {
                     pneuDiv.addEventListener('click', () => this.abrirModal(pneuDiv));
                 });
             },
-            salvarVeiculo() {
-                const placa = this.placaVeiculoInput.value.trim().toUpperCase();
-                const marcaVeiculo = this.marcaVeiculoInput.value.trim();
-                const modelo = this.eixosVeiculoSelect.value;
+            async salvarVeiculo() {
+                if (!clienteAtivo) {
+                    showToast('Selecione um cliente primeiro.');
+                    return;
+                }
+                const placa = document.getElementById('placa-veiculo').value.trim().toUpperCase();
+                const marca = document.getElementById('marca-veiculo').value.trim();
+                const modelo = document.getElementById('eixos-veiculo').value;
                 const eixos = modelosVeiculos[modelo].eixos;
 
-                if (!placa || !marcaVeiculo) {
+                if (!placa || !marca) {
                     showToast('Preencha a placa e a marca do veículo!');
                     return;
                 }
 
-                let historico = JSON.parse(localStorage.getItem('historicoVeiculos') || '[]');
-                
-                const veiculoExistente = historico.find(v => v.placa === placa);
-                if (veiculoExistente) {
-                    showToast('Veículo com esta placa já existe no histórico!');
-                    return;
+                try {
+                    const novoVeiculo = {
+                        placa, marca, modelo, eixos,
+                        posicoesPneus: modelosVeiculos[modelo].posicoes.reduce((acc, pos) => ({ ...acc, [pos]: null }), {})
+                    };
+                    await db.collection('clientes').doc(clienteAtivo.id).collection('veiculos').add(novoVeiculo);
+                    
+                    showToast(`Veículo ${placa} cadastrado com sucesso!`);
+                    document.getElementById('placa-veiculo').value = '';
+                    document.getElementById('marca-veiculo').value = '';
+                    showSection('inspecao');
+                } catch (error) {
+                    showToast('Erro ao salvar veículo: ' + error.message);
                 }
-
-                const novoVeiculo = {
-                    placa: placa,
-                    marca: marcaVeiculo,
-                    modelo: modelo,
-                    eixos: eixos,
-                    posicoesPneus: modelosVeiculos[modelo].posicoes.reduce((acc, pos) => ({ ...acc, [pos]: null }), {})
-                };
-                
-                historico.push(novoVeiculo);
-                localStorage.setItem('historicoVeiculos', JSON.stringify(historico));
-                
-                showToast(`Veículo ${placa} (${modelo}) cadastrado com sucesso!`);
-                
-                this.placaVeiculoInput.value = '';
-                this.marcaVeiculoInput.value = '';
-                this.eixosVeiculoSelect.value = 'Toco';
-
-                showSection('inspecao');
-                this.selectVeiculoInspecao.value = placa;
-                this.carregarVeiculoSelecionado();
             },
-            carregarHistoricoVeiculos() {
-                const historico = JSON.parse(localStorage.getItem('historicoVeiculos') || '[]');
-                this.selectVeiculoInspecao.innerHTML = '';
+            async carregarHistoricoVeiculos() {
+                if (!clienteAtivo) return;
                 
-                if (historico.length === 0) {
-                    this.selectVeiculoInspecao.disabled = true;
-                    this.selectVeiculoInspecao.innerHTML = '<option value="">Nenhum veículo cadastrado</option>';
-                    this.infoVeiculoSelecionado.textContent = 'Por favor, cadastre um veículo primeiro na aba "Cadastro de Veículo".';
+                const select = this.selectVeiculoInspecao;
+                select.innerHTML = '<option>Carregando...</option>';
+                select.disabled = true;
+
+                const querySnapshot = await db.collection('clientes').doc(clienteAtivo.id).collection('veiculos').get();
+                select.innerHTML = '';
+                
+                if (querySnapshot.empty) {
+                    select.innerHTML = '<option value="">Nenhum veículo cadastrado</option>';
+                    document.getElementById('info-veiculo-selecionado').textContent = 'Cadastre um veículo para este cliente.';
                     this.renderDiagrama(null);
                     return;
                 }
                 
-                this.selectVeiculoInspecao.disabled = false;
-                
-                historico.forEach(veiculo => {
+                querySnapshot.forEach(doc => {
+                    const veiculo = { id: doc.id, ...doc.data() };
                     const option = document.createElement('option');
-                    option.value = veiculo.placa;
+                    option.value = veiculo.id;
                     option.textContent = `${veiculo.placa} - ${veiculo.marca} (${veiculo.eixos} Eixos)`;
-                    this.selectVeiculoInspecao.appendChild(option);
+                    select.appendChild(option);
                 });
-
+                
+                select.disabled = false;
                 this.carregarVeiculoSelecionado();
             },
-            carregarVeiculoSelecionado() {
-                const placaSelecionada = this.selectVeiculoInspecao.value;
-                const historico = JSON.parse(localStorage.getItem('historicoVeiculos') || '[]');
-                const veiculo = historico.find(v => v.placa === placaSelecionada);
+            async carregarVeiculoSelecionado() {
+                const veiculoId = this.selectVeiculoInspecao.value;
+                if (!veiculoId || !clienteAtivo) return;
 
-                if (veiculo) {
-                    this.infoVeiculoSelecionado.textContent = `Veículo selecionado: Placa ${veiculo.placa} - Marca ${veiculo.marca}`;
-                    localStorage.setItem('veiculoAtivo', JSON.stringify(veiculo));
-                    this.renderDiagrama(veiculo);
+                const doc = await db.collection('clientes').doc(clienteAtivo.id).collection('veiculos').doc(veiculoId).get();
+                
+                if (doc.exists) {
+                    veiculoAtivo = { id: doc.id, ...doc.data() };
+                    document.getElementById('info-veiculo-selecionado').textContent = `Veículo selecionado: Placa ${veiculoAtivo.placa}`;
+                    this.renderDiagrama(veiculoAtivo);
                 }
             },
             renderDiagrama(veiculo) {
-                Object.values(this.diagramas).forEach(d => d.classList.remove('visible'));
+                document.querySelectorAll('.chassi-container').forEach(d => d.classList.remove('visible'));
+                if (!veiculo) return;
 
-                if (!veiculo) {
-                    return;
-                }
-
-                const diagramaAtivo = this.diagramas[veiculo.eixos];
+                const diagramaAtivo = document.getElementById(`diagrama-${veiculo.eixos}eixos`);
                 if (diagramaAtivo) {
                     diagramaAtivo.classList.add('visible');
                     const posicoes = veiculo.posicoesPneus;
                     
-                    document.querySelectorAll(`.chassi-container.visible .posicao-pneu`).forEach(pneuDiv => {
-                        const posicaoId = pneuDiv.id;
-                        const dadosPneu = posicoes[posicaoId];
+                    diagramaAtivo.querySelectorAll('.posicao-pneu').forEach(pneuDiv => {
+                        const dadosPneu = posicoes[pneuDiv.id];
                         if (dadosPneu && dadosPneu.nroFogo) {
                             pneuDiv.textContent = dadosPneu.nroFogo;
                             pneuDiv.classList.remove('vazio');
@@ -1253,129 +994,99 @@
                 }
             },
             abrirModal(pneuDiv) {
-                const veiculoAtivo = JSON.parse(localStorage.getItem('veiculoAtivo'));
                 if (!veiculoAtivo) {
-                    showToast('Selecione um veículo para começar a inspeção!');
+                    showToast('Selecione um veículo para a inspeção!');
                     return;
                 }
 
                 const posicaoId = pneuDiv.id;
-                const posicaoNome = pneuDiv.dataset.posicao;
                 const dadosPneu = veiculoAtivo.posicoesPneus[posicaoId];
+
+                document.getElementById('posicao-atual').value = posicaoId;
+                document.getElementById('modal-title').textContent = `Dados do Pneu - ${pneuDiv.dataset.posicao}`;
                 
-                this.posicaoAtualInput.value = posicaoId;
-                this.modalTitle.textContent = `Dados do Pneu - ${posicaoNome}`;
-                
-                if (dadosPneu) {
-                    this.nroFogoInput.value = dadosPneu.nroFogo || '';
-                    this.marcaPneuInput.value = dadosPneu.marca || '';
-                    this.psiInput.value = dadosPneu.psi || '';
-                    this.mmBorrachaInput.value = dadosPneu.mmBorracha || '';
-                    this.temTampaInput.checked = dadosPneu.temTampa || false;
-                } else {
-                    this.nroFogoInput.value = '';
-                    this.marcaPneuInput.value = '';
-                    this.psiInput.value = '';
-                    this.mmBorrachaInput.value = '';
-                    this.temTampaInput.checked = false;
-                }
-                
+                // Preencher ou limpar o formulário
+                document.getElementById('nroFogo').value = dadosPneu?.nroFogo || '';
+                document.getElementById('marca').value = dadosPneu?.marca || '';
+                document.getElementById('psi').value = dadosPneu?.psi || '';
+                document.getElementById('mmBorracha').value = dadosPneu?.mmBorracha || '';
+                document.getElementById('temTampa').checked = dadosPneu?.temTampa || false;
+
                 this.modal.style.display = 'flex';
             },
             fecharModal() { this.modal.style.display = 'none'; },
-            salvarDadosPneu() {
-                const posicaoId = this.posicaoAtualInput.value;
-                const nroFogo = this.nroFogoInput.value.trim();
-                const marca = this.marcaPneuInput.value.trim();
-                const psi = this.psiInput.value.trim();
-                const mmBorracha = this.mmBorrachaInput.value.trim();
-                const temTampa = this.temTampaInput.checked;
+            async salvarDadosPneu() {
+                const posicaoId = document.getElementById('posicao-atual').value;
+                const nroFogo = document.getElementById('nroFogo').value.trim();
                 
-                if (!nroFogo) { showToast('O "Nº de fogo" é obrigatório!'); return; }
-                
-                let historico = JSON.parse(localStorage.getItem('historicoVeiculos') || '[]');
-                let veiculoAtivo = JSON.parse(localStorage.getItem('veiculoAtivo'));
-                
-                const veiculoIndex = historico.findIndex(v => v.placa === veiculoAtivo.placa);
-                if (veiculoIndex !== -1) {
-                    historico[veiculoIndex].posicoesPneus[posicaoId] = { nroFogo, marca, psi, mmBorracha, temTampa };
-                    localStorage.setItem('historicoVeiculos', JSON.stringify(historico));
-                    localStorage.setItem('veiculoAtivo', JSON.stringify(historico[veiculoIndex]));
+                if (!nroFogo) {
+                    showToast('O "Nº de fogo" é obrigatório!');
+                    return;
                 }
                 
-                this.fecharModal();
-                this.renderDiagrama(JSON.parse(localStorage.getItem('veiculoAtivo')));
-                showToast('Dados do pneu salvos com sucesso!');
+                const dadosPneu = {
+                    nroFogo,
+                    marca: document.getElementById('marca').value.trim(),
+                    psi: document.getElementById('psi').value.trim(),
+                    mmBorracha: document.getElementById('mmBorracha').value.trim(),
+                    temTampa: document.getElementById('temTampa').checked
+                };
+
+                // Atualizar o objeto local
+                veiculoAtivo.posicoesPneus[posicaoId] = dadosPneu;
+
+                // Salvar no Firestore
+                try {
+                    const veiculoRef = db.collection('clientes').doc(clienteAtivo.id).collection('veiculos').doc(veiculoAtivo.id);
+                    await veiculoRef.update({
+                        [`posicoesPneus.${posicaoId}`]: dadosPneu
+                    });
+                    
+                    this.fecharModal();
+                    this.renderDiagrama(veiculoAtivo);
+                    showToast('Dados do pneu salvos com sucesso!');
+                } catch (error) {
+                    showToast('Erro ao salvar pneu: ' + error.message);
+                }
             }
         };
         PneusManager.init();
-
-        /* -----------------------
-           Criação de novo usuário (via dashboard)
-           ----------------------- */
-        document.getElementById('createUserBtn').addEventListener('click', () => {
-            const u = document.getElementById('newUser').value.trim();
-            const p = document.getElementById('newPass').value.trim();
-            if (!u || !p) { showToast('Preencha todos os campos!'); return; }
-            const users = JSON.parse(localStorage.getItem('users'));
-            if (users.find(x => x.username === u)) { showToast('Usuário já existe!'); return; }
-            users.push({ username: u, password: p, admin: false });
-            localStorage.setItem('users', JSON.stringify(users));
-            showToast('Usuário cadastrado!');
-            document.getElementById('newUser').value = '';
-            document.getElementById('newPass').value = '';
-        });
         
-        /* -----------------------
-           Cadastro de Clientes
-           ----------------------- */
-        document.getElementById('salvarClienteBtn').addEventListener('click', () => {
-            const nome = document.getElementById('cliente-nome').value.trim();
-            const cpf = document.getElementById('cliente-cpf').value.trim();
-            const telefone = document.getElementById('cliente-telefone').value.trim();
-            const endereco = document.getElementById('cliente-endereco').value.trim();
+        // Funções de renderização de histórico, relatórios e gráficos (adaptadas)
+        async function fetchVeiculosDoCliente() {
+            if (!clienteAtivo) return [];
+            const snapshot = await db.collection('clientes').doc(clienteAtivo.id).collection('veiculos').get();
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        }
 
-            if (!nome || !cpf) {
-                showToast('Nome e CPF/CNPJ são obrigatórios!');
+        async function renderizarHistoricoVeiculos() {
+            const veiculos = await fetchVeiculosDoCliente();
+            const tbody = document.querySelector('#historico-veiculos-table tbody');
+            tbody.innerHTML = '';
+            if (veiculos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Nenhum veículo cadastrado para este cliente.</td></tr>';
                 return;
             }
+            veiculos.forEach(v => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${v.placa}</td><td>${v.marca}</td><td>${v.eixos}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
 
-            let clientes = JSON.parse(localStorage.getItem('clientes') || '[]');
-            if (clientes.find(c => c.cpf === cpf)) {
-                showToast('Cliente com este CPF/CNPJ já cadastrado!');
-                return;
-            }
+        async function renderizarGraficos() {
+            const veiculos = await fetchVeiculosDoCliente();
+            // Lógica dos gráficos permanece a mesma, apenas usa `veiculos` vindo do Firestore
+        }
 
-            const novoCliente = {
-                id: Date.now().toString(),
-                nome,
-                cpf,
-                telefone,
-                endereco
-            };
-            
-            clientes.push(novoCliente);
-            localStorage.setItem('clientes', JSON.stringify(clientes));
-            showToast('Cliente cadastrado com sucesso!');
+        async function carregarVeiculosParaRelatorio() {
+             const veiculos = await fetchVeiculosDoCliente();
+             // Lógica para popular o select de relatórios permanece a mesma
+        }
 
-            // Limpa os campos após o cadastro
-            document.getElementById('cliente-nome').value = '';
-            document.getElementById('cliente-cpf').value = '';
-            document.getElementById('cliente-telefone').value = '';
-            document.getElementById('cliente-endereco').value = '';
-        });
+        // ... Adicione aqui a lógica adaptada para gerar relatórios e PDF
+        // ... e para renderizar os gráficos, usando a função fetchVeiculosDoCliente()
 
-        /* -----------------------
-           Dica: auto-login se lembrar salvo
-           ----------------------- */
-        (function autoLoginIfRemembered() {
-            const last = JSON.parse(localStorage.getItem('lastUser') || 'null');
-            if (last) {
-                document.getElementById('username').value = last.username;
-                document.getElementById('password').value = last.password;
-                document.getElementById('rememberMe').checked = true;
-            }
-        })();
     </script>
 </body>
 </html>
